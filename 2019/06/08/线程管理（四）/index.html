@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="线程局部存储、线程清除线程局部存储每个线程独有的数据 线程特定数据 进程的多个线程通过全局堆共享全局数据对象 每个线程拥有独立的栈  让线程拥有数据的独立副本：不能简单赋值或读取 pthread_key_create()函数：为线程特定数据创建一个键  原型： 1int  pthread_key_create(pthread_key_t  *key,  void (*destr_function)">
+<meta name="keywords" content="线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程管理（四）">
+<meta property="og:url" content="https://songwei163.github.io/2019/06/08/线程管理（四）/index.html">
+<meta property="og:site_name" content="古渡廊桥">
+<meta property="og:description" content="线程局部存储、线程清除线程局部存储每个线程独有的数据 线程特定数据 进程的多个线程通过全局堆共享全局数据对象 每个线程拥有独立的栈  让线程拥有数据的独立副本：不能简单赋值或读取 pthread_key_create()函数：为线程特定数据创建一个键  原型： 1int  pthread_key_create(pthread_key_t  *key,  void (*destr_function)">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-06-08T15:52:52.173Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="线程管理（四）">
+<meta name="twitter:description" content="线程局部存储、线程清除线程局部存储每个线程独有的数据 线程特定数据 进程的多个线程通过全局堆共享全局数据对象 每个线程拥有独立的栈  让线程拥有数据的独立副本：不能简单赋值或读取 pthread_key_create()函数：为线程特定数据创建一个键  原型： 1int  pthread_key_create(pthread_key_t  *key,  void (*destr_function)">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://songwei163.github.io/2019/06/08/线程管理（四）/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>线程管理（四） | 古渡廊桥</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">古渡廊桥</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">风里雨里</p>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Navigationsleiste an/ausschalten">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Startseite</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Schlagwörter</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Kategorien</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archiv</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://songwei163.github.io/2019/06/08/线程管理（四）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="宋伟">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="古渡廊桥">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">线程管理（四）
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-06-08 23:52:12 / Geändert am: 23:52:52" itemprop="dateCreated datePublished" datetime="2019-06-08T23:52:12+08:00">2019-06-08</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="线程局部存储、线程清除"><a href="#线程局部存储、线程清除" class="headerlink" title="线程局部存储、线程清除"></a>线程局部存储、线程清除</h4><h5 id="线程局部存储"><a href="#线程局部存储" class="headerlink" title="线程局部存储"></a>线程局部存储</h5><h6 id="每个线程独有的数据"><a href="#每个线程独有的数据" class="headerlink" title="每个线程独有的数据"></a>每个线程独有的数据</h6><ul>
+<li>线程特定数据</li>
+<li>进程的多个线程通过全局堆共享全局数据对象</li>
+<li>每个线程拥有独立的栈</li>
+</ul>
+<h6 id="让线程拥有数据的独立副本：不能简单赋值或读取"><a href="#让线程拥有数据的独立副本：不能简单赋值或读取" class="headerlink" title="让线程拥有数据的独立副本：不能简单赋值或读取"></a>让线程拥有数据的独立副本：不能简单赋值或读取</h6><ul>
+<li><p><code>pthread_key_create()</code>函数：为线程特定数据创建一个键</p>
+<ul>
+<li><p>原型：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span>  <span class="title">pthread_key_create</span><span class="params">(<span class="keyword">pthread_key_t</span>  *key,  <span class="keyword">void</span> (*destr_function)(<span class="keyword">void</span> *))</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>参数：第一个指向<code>pthread_key_t</code>类型变量的指针（每个线程都可以使用它访问自己的独立数据副本）；第二个参数为指向线程清除函数的指针，如果不存在，传递<code>NULL</code>。</p>
+</li>
+</ul>
+</li>
+<li><p><code>pthread_serspecific()</code>函数：设置对应键的值</p>
+</li>
+<li><p><code>pthread_getspecific()</code>函数：读取对应键的值</p>
+</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">pthread_key_t</span> tlk;<span class="comment">//关联线程日志文件指针的键</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">WriteToThreadLog</span> <span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *msg)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  FILE *fp = (FILE *) pthread_getspecific (tlk);</span><br><span class="line">  <span class="built_in">fprintf</span> (fp, <span class="string">"%d:%s\n"</span>, (<span class="keyword">int</span>) pthread_self (), msg);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">CloseThreadLog</span> <span class="params">(<span class="keyword">void</span> *fp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  fclose ((FILE *) fp);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">ThreadFunc</span> <span class="params">(<span class="keyword">void</span> *args)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> filename[<span class="number">255</span>];</span><br><span class="line">  FILE *fp;</span><br><span class="line">  <span class="comment">//生成与线程ID配套的日志文件名</span></span><br><span class="line">  <span class="built_in">sprintf</span> (filename, <span class="string">"thread%d.log"</span>, (<span class="keyword">int</span>) pthread_self ());</span><br><span class="line">  fp = fopen (filename, <span class="string">"w"</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">//设置线程日志文件指针与键的局部存储关联</span></span><br><span class="line">  pthread_setspecific (tlk, fp);</span><br><span class="line">  <span class="comment">//向日志中写入数据，不同的线程会写入不同的文件</span></span><br><span class="line">  WriteToThreadLog (<span class="string">"Thread starting..."</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> i;</span><br><span class="line">  <span class="keyword">pthread_t</span> threads[<span class="number">8</span>];</span><br><span class="line">  <span class="comment">//创建键，使用CloseThreadLog()函数作为其清除程序</span></span><br><span class="line">  pthread_key_create (&amp;tlk,CloseThreadLog);</span><br><span class="line">  <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="number">8</span>; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">      pthread_create (&amp;threads[i], <span class="literal">nullptr</span>, ThreadFunc, <span class="literal">nullptr</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="number">8</span>; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">      pthread_join (threads[i], <span class="literal">nullptr</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  pthread_key_delete (tlk);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="线程清除函数"><a href="#线程清除函数" class="headerlink" title="线程清除函数"></a>线程清除函数</h5><p>线程清除函数：回调函数，单void*参数，无返回值</p>
+<ul>
+<li>目的：销毁线程退出或被撤销时未释放的资源</li>
+</ul>
+<p><code>pthread_cleanup_push()</code>函数：注册线程清除函数</p>
+<ul>
+<li><p>原型：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">pthread_cleanup_push</span><span class="params">(<span class="keyword">void</span> (*routine)(<span class="keyword">void</span> *),<span class="keyword">void</span> *arg)</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>参数：<code>routine</code>为指向线程清除函数的函数指针，<code>arg</code>为传递给回调函数的附加数据对象</p>
+</li>
+</ul>
+<p><code>pthread_cleanup_pop()</code>函数：取消线程清除函数注册</p>
+<ul>
+<li><p>原型：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">pthread_cleanup_pop</span><span class="params">(<span class="keyword">int</span> execute)</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>参数：整型值，非0调用回调函数释放资源，0不释放</p>
+</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstdlib&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">AllocateBuffer</span> <span class="params">(<span class="keyword">size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">malloc</span> (size);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">DeallocBuffer</span> <span class="params">(<span class="keyword">void</span> *buffer)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">free</span> (buffer);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">DoSomeWork</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">void</span> *temp_buffer = AllocateBuffer (<span class="number">1024</span>);</span><br><span class="line">  <span class="comment">//注册清除处理函数</span></span><br><span class="line">  pthread_cleanup_push (DeallocBuffer, temp_buffer);</span><br><span class="line">      <span class="comment">//此处可以调用pthread_exit()退出线程或者撤销线程</span></span><br><span class="line">      <span class="comment">//取消线程，传递非0值，实施清除任务</span></span><br><span class="line">  pthread_cleanup_pop (<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h6 id="C-的问题"><a href="#C-的问题" class="headerlink" title="C++的问题"></a>C++的问题</h6><ul>
+<li>对象的析构函数在线程退出时可能没有机会调用，因而线程栈上的数据未清除</li>
+<li>如何确保线程资源被正确释放</li>
+</ul>
+<p>解决方法</p>
+<ul>
+<li>定义异常类，线程在准备退出时引发异常，然后在异常处理中退出线程执行</li>
+<li>引发异常时，C++确保析构函数被调用</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EThreadExit</span> &#123;</span></span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  EThreadExit (<span class="keyword">void</span> *ret_val)</span><br><span class="line">      : _thread_ret_val (ret_val)</span><br><span class="line">  &#123; &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> *<span class="title">DoThreadExit</span> <span class="params">()</span></span></span><br><span class="line"><span class="function">  </span>&#123;</span><br><span class="line">    pthread_exit (_thread_ret_val);</span><br><span class="line">  &#125;</span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  <span class="keyword">void</span> *_thread_ret_val;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">ThreadFunc</span> <span class="params">(<span class="keyword">void</span> *arg)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">if</span> (<span class="comment">/*线程需要立即退出*/</span>)</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="keyword">throw</span> EThreadExit (<span class="comment">/*线程返回值*/</span>);	<span class="comment">/*异常处理对象*/</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="keyword">catch</span> (<span class="keyword">const</span> EThreadExit&amp; e)	<span class="comment">/*接收其传递*/</span></span><br><span class="line">    &#123;</span><br><span class="line">      e.DoThreadExit ();  <span class="comment">//执行线程实际退出动作	</span></span><br><span class="line">    &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        
+          
+        
+        <div class="post-tags">
+          
+            <a href="/tags/线程/" rel="tag"># 线程</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/06/08/线程管理（三）/" rel="next" title="线程管理（三）">
+                <i class="fa fa-chevron-left"></i> 线程管理（三）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/06/08/线程同步机制（一）/" rel="prev" title>
+                 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">宋伟</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-name">Artikel</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">Kategorien</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">schlagwörter</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/songwei163" title="GitHub &rarr; https://github.com/songwei163" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:songweicpp@163.com" title="E-Mail &rarr; mailto:songweicpp@163.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#线程局部存储、线程清除"><span class="nav-number">1.</span> <span class="nav-text">线程局部存储、线程清除</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#线程局部存储"><span class="nav-number">1.1.</span> <span class="nav-text">线程局部存储</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#每个线程独有的数据"><span class="nav-number">1.1.1.</span> <span class="nav-text">每个线程独有的数据</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#让线程拥有数据的独立副本：不能简单赋值或读取"><span class="nav-number">1.1.2.</span> <span class="nav-text">让线程拥有数据的独立副本：不能简单赋值或读取</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#线程清除函数"><span class="nav-number">1.2.</span> <span class="nav-text">线程清除函数</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#C-的问题"><span class="nav-number">1.2.1.</span> <span class="nav-text">C++的问题</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">宋伟</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/schemes/muse.js?v=7.1.2"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
