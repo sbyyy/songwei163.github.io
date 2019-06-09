@@ -324,6 +324,208 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://songwei163.github.io/2019/06/09/C-11线程库（一）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="宋伟">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="古渡廊桥">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/06/09/C-11线程库（一）/" class="post-title-link" itemprop="url">C++11线程库（一）</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-06-09 19:15:45 / Geändert am: 19:16:23" itemprop="dateCreated datePublished" datetime="2019-06-09T19:15:45+08:00">2019-06-09</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">in</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h4 id="C-11线程库（一）"><a href="#C-11线程库（一）" class="headerlink" title="C++11线程库（一）"></a>C++11线程库（一）</h4><p>支持平台无关的并行程序开发库：</p>
+<p><code>atomic</code>、<code>thread</code>、<code>mutex</code>、<code>condition_variable</code>、<code>future</code></p>
+<ul>
+<li><p><code>thread</code>：<code>std::thread</code>类与<code>std::this_thread</code>名空间</p>
+</li>
+<li><p><code>mutex</code> ：互斥相关类，包括<code>std::mutex</code>系列类，<code>std::lock_guard</code>类、<code>std::unique_lock</code>类及其他型式和函数</p>
+</li>
+<li><p><code>condition_variable</code>：条件变量类，包括<code>std::condition_variable</code>类与<code>std::condition_variable_any</code>类</p>
+</li>
+<li><p><code>atomic</code>：<code>std::atomic</code>类与<code>std::atomic_flag</code>类，另外有一套C风格的原子型式和原子操作函数</p>
+</li>
+<li><p><code>future</code>：包含两个承诺类（<code>std::promise</code>、<code>std::packaged_task</code>类）、两个期许类（<code>std::future</code>类、<code>std::shared_future</code>类）及相关型式和函数</p>
+</li>
+</ul>
+<h5 id="线程类"><a href="#线程类" class="headerlink" title="线程类"></a>线程类</h5><ul>
+<li>支持的线程函数无参数和返回值型式的特别要求，有无参数均可，返回值有无均可。</li>
+</ul>
+<p>与Linux线程机制相比，C++11线程类更易用</p>
+<p>线程局部存储使用<code>thread_local</code>关键字</p>
+<p>可以派生自己的<code>thread</code>类，但实现上需特别注意</p>
+<ul>
+<li>线程类应支持移动语义，但不应支持拷贝语义</li>
+</ul>
+<h6 id="常用线程类成员函数"><a href="#常用线程类成员函数" class="headerlink" title="常用线程类成员函数"></a>常用线程类成员函数</h6><ul>
+<li>判断线程是否可联：<code>bool thread::joinable();</code></li>
+<li>等待线程结束：<code>void thread::join();</code></li>
+<li>分离线程：<code>void thread::detach();</code></li>
+</ul>
+<h6 id="定义于名空间this-thread的线程管理函数"><a href="#定义于名空间this-thread的线程管理函数" class="headerlink" title="定义于名空间this_thread的线程管理函数"></a>定义于名空间this_thread的线程管理函数</h6><ul>
+<li>获取线程ID：<code>thread::id get_id();</code></li>
+<li>在处于等待状态时，让调度器选择其他线程执行：<code>void yield();</code></li>
+<li>阻塞当前线程指定时长：<code>template&lt;typename _Rep,typename _Period&gt; void sleep_for(const chrono::duration&lt;__Rep,_Period&gt;&amp;_rtime);</code></li>
+<li>阻塞当前线程至指定时点：<code>template&lt;typename _Clock,typename _Duration&gt; void sleep_until(const chrono::time_point&lt;_Clock,_Duration&gt;&amp;_atime);</code></li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ThreadFunc</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">cout</span> &lt;&lt; <span class="string">"Thread ID: "</span> &lt;&lt; this_thread::get_id () &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="comment">//利用函数指针</span></span><br><span class="line">  <span class="function">thread <span class="title">t</span> <span class="params">(ThreadFunc)</span></span>;</span><br><span class="line">  t.join ();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ThreadFunc</span> <span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">cout</span> &lt;&lt; <span class="string">"Thread ID: "</span> &lt;&lt; this_thread::get_id () &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">  <span class="built_in">cout</span> &lt;&lt; a &lt;&lt; <span class="string">" + "</span> &lt;&lt; b &lt;&lt; <span class="string">" = "</span> &lt;&lt; a + b &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> m&#123;<span class="number">10</span>&#125;, n&#123;<span class="number">20</span>&#125;;</span><br><span class="line">  <span class="comment">//利用函数指针，多个参数</span></span><br><span class="line">  <span class="function">thread <span class="title">t</span> <span class="params">(&amp;ThreadFunc, m, n)</span></span>;</span><br><span class="line">  t.join ();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Functor</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="keyword">int</span> a,<span class="keyword">int</span> b)</span></span></span><br><span class="line"><span class="function">  </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"Thread ID: "</span> &lt;&lt; this_thread::get_id () &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; a &lt;&lt; <span class="string">" + "</span> &lt;&lt; b &lt;&lt; <span class="string">" = "</span> &lt;&lt; a + b &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> m&#123;<span class="number">10</span>&#125;, n&#123;<span class="number">20</span>&#125;;</span><br><span class="line">  <span class="comment">//利用函数对象</span></span><br><span class="line">  <span class="function">thread <span class="title">t</span> <span class="params">(Functor(), m, n)</span></span>;</span><br><span class="line">  t.join ();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Worker</span> &#123;</span></span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  Worker (<span class="keyword">int</span> a = <span class="number">0</span>, <span class="keyword">int</span> b = <span class="number">0</span>)</span><br><span class="line">      : _a (a), _b (b)</span><br><span class="line">  &#123; &#125;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">ThreadFunc</span> <span class="params">()</span></span></span><br><span class="line"><span class="function">  </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"Thread ID: "</span> &lt;&lt; this_thread::get_id () &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; _a &lt;&lt; <span class="string">" + "</span> &lt;&lt; _b &lt;&lt; <span class="string">" = "</span> &lt;&lt; _a + _b &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">  &#125;</span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  <span class="keyword">int</span> _a;</span><br><span class="line">  <span class="keyword">int</span> _b;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  Worker worker&#123;<span class="number">10</span>, <span class="number">20</span>&#125;;</span><br><span class="line">  <span class="comment">//绑定对象和对应类的函数作为线程创建调用函数</span></span><br><span class="line">  <span class="function">thread <span class="title">t</span> <span class="params">(bind (&amp;Worker::ThreadFunc, &amp;worker))</span></span>;</span><br><span class="line">  t.join ();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://songwei163.github.io/2019/06/08/线程同步机制（一）/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1998,7 +2200,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-count">9</span>
                     <span class="site-state-item-name">Artikel</span>
                   </a>
                 </div>
